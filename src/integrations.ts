@@ -26,5 +26,9 @@ export const integrations: Record<
 > = {
   google: { billing: 'user' },
   composio: { billing: 'user' },
-  // openai: { billing: 'developer', anonymous: true },
+  // PageQuiz: the host's quiz is generated on the app owner's account so guests
+  // never need credits. Sign-in is still required, and createGame caps each
+  // host at QUIZ_LIMITS.maxGamesPerDay to bound spend.
+  firecrawl: { billing: 'developer' },
+  anthropic: { billing: 'developer' },
 }
