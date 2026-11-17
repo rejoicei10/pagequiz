@@ -139,7 +139,7 @@ interface ScrapeData {
 /** Firecrawl's response nests differently depending on proxy version; find the page. */
 function pickScrape(payload: unknown): ScrapeData | null {
   let cur: unknown = payload
-  for (let depth = 0; depth < 3 && cur && typeof cur === 'object'; depth++) {
+  for (let depth = 0; depth < 4 && cur && typeof cur === 'object'; depth++) {
     const obj = cur as Record<string, unknown>
     if (typeof obj.markdown === 'string') return obj as ScrapeData
     cur = obj.data
