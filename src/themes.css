@@ -44,3 +44,34 @@
   --color-shell: #fafafa;
   --color-shell-panel: #ffffff;
 }
+
+/* Arcade — PageQuiz's own theme: late-night game-show navy with warm gold.
+ * The four answer colors live in styles.css as --color-opt-* and are paired
+ * with shapes, so they never carry meaning on color alone. */
+[data-theme="arcade"] {
+  color-scheme: dark;
+  --color-background: #0e1024;
+  --color-foreground: #f4f1ea;
+  --color-card: #171a36;
+  --color-card-foreground: #f4f1ea;
+  --color-popover: #1c2042;
+  --color-popover-foreground: #f4f1ea;
+  --color-primary: #ffc94a;
+  --color-primary-foreground: #1a1405;
+  --color-secondary: #232850;
+  --color-secondary-foreground: #f4f1ea;
+  --color-muted: #1f2346;
+  --color-muted-foreground: #a6a9c9;
+  --color-accent: #2a2f5c;
+  --color-accent-foreground: #f4f1ea;
+  --color-destructive: #ff5d5d;
+  --color-destructive-foreground: #ffffff;
+  --color-border: #2c3163;
+  --color-input: #343a72;
+  --color-ring: #ffc94a;
+  --radius: 0.9rem;
+  --shadow-card: 0 1px 0 0 rgba(255, 255, 255, 0.04) inset, 0 8px 24px -12px rgba(0, 0, 0, 0.6);
+  --shadow-card-hover: 0 1px 0 0 rgba(255, 255, 255, 0.06) inset, 0 12px 32px -12px rgba(0, 0, 0, 0.7);
+  --color-shell: #0b0d1e;
+  --color-shell-panel: #131632;
+}

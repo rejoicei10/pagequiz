@@ -18,6 +18,11 @@
 
 export const THEMES = [
   {
+    id: 'arcade',
+    label: 'Arcade',
+    description: 'PageQuiz default: game-show navy with warm gold.',
+  },
+  {
     id: 'slate',
     label: 'Slate',
     description: 'Neutral dark placeholder default. Replace with your own theme.',

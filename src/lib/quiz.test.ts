@@ -84,12 +84,14 @@ describe('tallyScores', () => {
     { userId: 'a', index: 1, points: 600, correct: 1 },
     { userId: 'b', index: 1, points: 800, correct: 1 },
     { userId: 'a', index: 2, points: 700, correct: 1 }, // not revealed yet
+    { userId: 'c', index: 1, points: 0, correct: -1 }, // ungraded never scores
   ]
 
   it('sums only revealed questions', () => {
     const t = tallyScores(answers, 1)
     expect(t.get('a')).toEqual({ score: 1500, correctCount: 2 })
     expect(t.get('b')).toEqual({ score: 800, correctCount: 1 })
+    expect(t.get('c')).toEqual({ score: 0, correctCount: 0 })
   })
 
   it('is idempotent: running it twice yields the same totals', () => {

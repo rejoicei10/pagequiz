@@ -1,6 +1,9 @@
 /** App name — replaced by the CLI during scaffolding */
 export const APP_NAME = 'pagequiz'
 
+/** Human-facing product name (APP_NAME is the subdomain slug). */
+export const APP_DISPLAY_NAME = 'PageQuiz'
+
 /** Immutable app identity — data scope keys to this, so renames never
  *  strand your records.
  *

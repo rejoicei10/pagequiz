@@ -98,6 +98,7 @@ export interface AnswerForScoring {
   userId: string
   index: number
   points: number
+  /** 1 correct, 0 wrong, -1 not graded yet. */
   correct: number
 }
 
@@ -115,8 +116,11 @@ export function tallyScores(
   for (const a of answers) {
     if (a.index > throughIndex) continue
     const t = totals.get(a.userId) ?? { score: 0, correctCount: 0 }
-    t.score += a.points
-    t.correctCount += a.correct ? 1 : 0
+    // correct is 1 / 0 once graded, -1 while ungraded (never counts).
+    if (a.correct === 1) {
+      t.score += a.points
+      t.correctCount += 1
+    }
     totals.set(a.userId, t)
   }
   return totals
@@ -184,7 +188,7 @@ export function validateSourceUrl(input: unknown): { ok: true; url: string } | {
 }
 
 /** Collapses whitespace and cuts to the model budget at a paragraph boundary when possible. */
-export function prepareSourceText(raw: string, max = QUIZ_LIMITS.maxSourceChars): string {
+export function prepareSourceText(raw: string, max: number = QUIZ_LIMITS.maxSourceChars): string {
   const text = raw
     .replace(/\r\n/g, '\n')
     .replace(/!\[[^\]]*\]\([^)]*\)/g, '') // markdown images carry no quiz value

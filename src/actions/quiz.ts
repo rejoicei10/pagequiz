@@ -208,12 +208,11 @@ const createGame: ActionHandler<Env> = async ({ userId, params, tools }: Ctx) =>
 
   // Each quiz spends the app owner's AI + scraping credits, so cap per host.
   const since = Date.now() - 24 * 60 * 60 * 1000
-  const mine = await tools.query('games', { where: { hostId: userId }, orderBy: 'createdAt', orderDir: 'desc', limit: 50 })
-  if (mine.success) {
-    const recent = mine.data.records.filter((r) => Date.parse(r.createdAt) > since).length
-    if (recent >= QUIZ_LIMITS.maxGamesPerDay) {
-      return fail(`You've made ${recent} quizzes today. Come back tomorrow for more.`, 'rate_limited')
-    }
+  const mine = await tools.query('games', { where: { hostId: userId }, limit: 200 })
+  if (!mine.success) return fail('Could not check your quota. Please try again.', 'quota_check_failed')
+  const recent = mine.data.records.filter((r) => Date.parse(r.createdAt) > since).length
+  if (recent >= QUIZ_LIMITS.maxGamesPerDay) {
+    return fail(`You've made ${recent} quizzes today. Come back tomorrow for more.`, 'rate_limited')
   }
 
   let sourceText: string
@@ -356,20 +355,17 @@ const submitAnswer: ActionHandler<Env> = async ({ userId, params, tools }: Ctx) 
   const already = await tools.get('answers', answerId)
   if (already.success) return fail('You already answered this one.', 'already_answered')
 
-  const bank = await tools.get<BankRow>('question_bank', ids.bank(code, index))
-  if (!bank.success) return fail('That question is missing.', 'missing_question')
-  const correct = bank.data.record.data.correctIndex === choice
+  // Store only the choice and the server-measured time. Correctness and
+  // points are written at reveal: the answer row is readable by its player,
+  // so grading now would leak the right answer through devtools.
   const msTaken = now - game.questionStartedAt
-  const points = scoreAnswer({ correct, msTaken, secondsPerQuestion: game.secondsPerQuestion })
-
   const saved = await tools.create<AnswerRow>(
     'answers',
-    { gameId: code, userId, index, choice, correct: correct ? 1 : 0, points, msTaken },
+    { gameId: code, userId, index, choice, correct: -1, points: 0, msTaken },
     answerId,
   )
   if (!saved.success) return fail('Could not save your answer. Try again.', 'save_failed')
   await tools.update<PlayerRow>('players', playerId, { lastAnsweredIndex: index })
-  // Deliberately do not tell the player whether they were right: that is the reveal's job.
   return { success: true, data: { locked: true } }
 }
 
@@ -385,15 +381,27 @@ const revealQuestion: ActionHandler<Env> = async (ctx: Ctx) => {
 
   const bank = await ctx.tools.get<BankRow>('question_bank', ids.bank(code, index))
   if (!bank.success) return fail('That question is missing.', 'missing_question')
+  const key = bank.data.record.data
   const answers = await queryAll<AnswerRow>(ctx.tools, 'answers', { gameId: code })
-  const thisRound = answers.filter((a) => a.index === index)
+
+  // Grade this round now (see submitAnswer for why it waits until reveal).
+  for (const a of answers) {
+    if (a.index !== index) continue
+    const correct = a.choice === key.correctIndex
+    const points = scoreAnswer({ correct, msTaken: a.msTaken, secondsPerQuestion: game.secondsPerQuestion })
+    const graded = { correct: correct ? 1 : 0, points }
+    if (a.correct !== graded.correct || a.points !== graded.points) {
+      await ctx.tools.update<AnswerRow>('answers', ids.answer(code, index, a.userId), graded)
+    }
+    Object.assign(a, graded)
+  }
 
   await ctx.tools.update('questions', ids.question(code, index), {
-    correctIndex: bank.data.record.data.correctIndex,
-    explanation: bank.data.record.data.explanation,
+    correctIndex: key.correctIndex,
+    explanation: key.explanation,
     tally: tallyChoices(
-      thisRound.map((a) => a.choice),
-      bank.data.record.data.options.length,
+      answers.filter((a) => a.index === index).map((a) => a.choice),
+      key.options.length,
     ),
   })
 
