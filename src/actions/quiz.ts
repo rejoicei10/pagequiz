@@ -28,6 +28,8 @@ import {
 
 /** Balanced quality/latency for question writing; see DEEPSPACE_AI_MODELS in the SDK. */
 export const QUIZ_MODEL = 'claude-sonnet-5-5'
+/** Used only if the integration rejects QUIZ_MODEL (e.g. not yet enabled on the platform). */
+export const QUIZ_FALLBACK_MODEL = 'claude-haiku-4-5'
 
 type Ctx = ActionContext<Env>
 type Fail = { success: false; error: string; code?: string }
@@ -173,12 +175,20 @@ interface AnthropicReply {
 
 async function generateQuiz(tools: ActionTools, source: string, wanted: number, label: string) {
   const { system, user } = buildQuizPrompts(source, wanted, label)
-  const res = await tools.integration<AnthropicReply>('anthropic/chat-completion', {
-    model: QUIZ_MODEL,
-    max_tokens: 4000,
-    system,
-    messages: [{ role: 'user', content: user }],
-  })
+  const call = (model: string) =>
+    tools.integration<AnthropicReply>('anthropic/chat-completion', {
+      model,
+      max_tokens: 4000,
+      system,
+      messages: [{ role: 'user', content: user }],
+    })
+  let res = await call(QUIZ_MODEL)
+  // A 400/404 means the request itself was refused (most likely the model id),
+  // not that the provider is down; one retry on a long-established model.
+  if (!res.success && (res.status === 400 || res.status === 404)) {
+    console.warn(`[quiz] ${QUIZ_MODEL} refused (status ${res.status}); retrying with ${QUIZ_FALLBACK_MODEL}`)
+    res = await call(QUIZ_FALLBACK_MODEL)
+  }
   if (!res.success) {
     console.warn(`[quiz] generation failed code=${res.code ?? ''} status=${res.status ?? ''}`)
     return fail('The quiz writer is unavailable right now. Please try again in a minute.', 'ai_failed')

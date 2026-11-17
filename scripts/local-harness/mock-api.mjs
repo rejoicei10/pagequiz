@@ -21,6 +21,11 @@ http.createServer((req, res) => {
       return res.end(JSON.stringify({ success: true, data: { data: { markdown: 'Octopus text. '.repeat(60), metadata: { title: 'Octopus - Wikipedia' } } } }))
     }
     if (req.url.includes('anthropic')) {
+      // MOCK_REJECT_MODEL=<id> simulates the platform refusing a model id.
+      if (process.env.MOCK_REJECT_MODEL && body.includes(`"model":"${process.env.MOCK_REJECT_MODEL}"`)) {
+        res.statusCode = 400
+        return res.end(JSON.stringify({ success: false, error: 'mock: unknown model' }))
+      }
       return res.end(JSON.stringify({ success: true, data: { content: [{ type: 'text', text: 'Here you go:\n```json\n' + JSON.stringify(quiz) + '\n```' }] } }))
     }
     res.statusCode = 404; res.end(JSON.stringify({ success: false, error: 'mock: unknown ' + req.url }))
