@@ -1,5 +1,5 @@
 /** App name — replaced by the CLI during scaffolding */
-export const APP_NAME = 'pagequiz'
+export const APP_NAME = 'pagequiz-rejoice'
 
 /** Human-facing product name (APP_NAME is the subdomain slug). */
 export const APP_DISPLAY_NAME = 'PageQuiz'
